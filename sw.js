@@ -1,8 +1,9 @@
 const staticCacheName = 'site-static-v2'
-const dynamicCache = 'site-dynamic-v1'
+const dynamicCacheName = 'site-dynamic-v1'
 const assets = [
     '/',
     '/index.html',
+    '/pages/fallback.html',
     '/js/app.js',
     '/js/ui.js',
     '/js/materialize.min.js',
@@ -29,7 +30,7 @@ self.addEventListener('activate', evt => {
     evt.waitUntil(
         caches.keys().then(keys => {
             return Promise.all(keys
-                .filter(key => key !== staticCacheName)
+                .filter(key => key !== staticCacheName && key !== dynamicCacheName)
                 .map(key => caches.delete(key))
             )
         })
@@ -42,11 +43,11 @@ self.addEventListener('fetch', evt => {
     evt.respondWith(
         caches.match(evt.request).then(cacheRes => {
             return cacheRes || fetch(evt.request).then(fecthRes => {
-                return caches.open(dynamicCache).then(cache => {
+                return caches.open(dynamicCacheName).then(cache => {
                     cache.put(evt.request.url, fecthRes.clone())
                     return fecthRes
                 })
             })
-        })
+        }).catch(() => caches.match('pages/fallback.html'))
     )
 })
